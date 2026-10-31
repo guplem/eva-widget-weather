@@ -10,15 +10,31 @@
     <script type="module" src="main.js"></script>
   </head>
   <body>
-    <main class="widget" data-size="medium">
-      <header class="widget-header">
-        <h1 class="widget-title">Habits</h1>
-        <p class="widget-summary" data-role="summary"></p>
-      </header>
-      <ul class="habit-list" data-role="habits"></ul>
+    <main class="widget" data-size="medium" data-state="loading">
+      <section class="now" data-role="now" aria-live="polite">
+        <div class="now-main">
+          <span class="now-icon" data-role="now-icon"></span>
+          <span class="now-temperature" data-role="now-temperature"></span>
+        </div>
+        <div class="now-text">
+          <p class="now-sky" data-role="now-sky"></p>
+          <p class="now-range" data-role="now-range"></p>
+        </div>
+      </section>
+      <dl class="details" data-role="details"></dl>
+      <ol class="hours" data-role="hours" aria-label="The next hours"></ol>
+      <ol class="days" data-role="days" aria-label="The next days"></ol>
+      <div class="message no-location" data-role="no-location">
+        <p>Eva has no location yet. On your phone, open Settings &gt; Access &gt; Your location in Eva.</p>
+        <p class="message-more">Or share your live location with Eva's bot in Telegram.</p>
+      </div>
+      <p class="message" data-role="message"></p>
       <footer class="widget-footer">
-        <p class="widget-location" data-role="location"></p>
-        <p class="widget-note" data-role="note" hidden></p>
+        <p class="place" data-role="place">
+          <span data-role="place-where"></span>
+          <span class="place-age" data-role="place-age"></span>
+        </p>
+        <a class="credit" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo</a>
       </footer>
     </main>
   </body>

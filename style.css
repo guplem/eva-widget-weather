@@ -14,6 +14,10 @@ body {
   font-family: system-ui, sans-serif;
 }
 
+p {
+  margin: 0;
+}
+
 .widget {
   box-sizing: border-box;
   display: flex;
@@ -21,92 +25,337 @@ body {
   gap: clamp(4px, 2vmin, 16px);
   width: 100vw;
   height: 100vh;
-  padding: clamp(8px, 3vmin, 32px);
+  padding: clamp(8px, 3vmin, 24px);
   overflow: hidden;
   background: var(--panel, #ffffff);
 }
 
-.widget-header {
+/* --- The weather now --------------------------------------------------------------------------- */
+
+.now {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 12px;
+  align-items: center;
+  gap: 4px clamp(8px, 3vmin, 24px);
+  min-height: 0;
 }
 
-.widget-title {
-  margin: 0;
-  font-size: clamp(16px, 6vmin, 40px);
-}
-
-.widget-summary,
-.widget-location,
-.widget-note {
-  margin: 0;
-  color: var(--muted, #5d6475);
-  font-size: clamp(12px, 3.5vmin, 22px);
-}
-
-.widget-note {
-  color: var(--warn, #9a6b00);
-}
-
-.habit-list {
-  display: grid;
-  flex: 1;
-  grid-auto-rows: minmax(2.5em, 1fr);
+.now-main {
+  display: flex;
+  align-items: center;
   gap: clamp(4px, 1.5vmin, 12px);
+}
+
+.now-icon .icon {
+  display: block;
+  width: clamp(36px, 18vmin, 120px);
+  height: clamp(36px, 18vmin, 120px);
+}
+
+.now-temperature {
+  font-size: clamp(32px, 16vmin, 112px);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.now-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.now-sky {
+  font-size: clamp(14px, 5vmin, 32px);
+  font-weight: 600;
+}
+
+.now-range {
+  color: var(--muted, #5d6475);
+  font-size: clamp(12px, 3.2vmin, 20px);
+}
+
+/* --- The icons --------------------------------------------------------------------------------- */
+
+.icon {
+  flex: none;
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-sun circle {
+  fill: var(--warn, #d99a00);
+}
+
+.icon-sun line {
+  stroke: var(--warn, #d99a00);
+  stroke-width: 1.6;
+}
+
+.icon-moon {
+  fill: var(--muted, #5d6475);
+}
+
+.icon-cloud {
+  fill: var(--chip, #eef0f5);
+  stroke: var(--muted, #5d6475);
+  stroke-width: 1.4;
+}
+
+.icon-fog {
+  stroke: var(--muted, #5d6475);
+  stroke-width: 1.8;
+}
+
+.icon-rain {
+  stroke: var(--accent, #3b82f6);
+  stroke-width: 1.6;
+}
+
+.icon-snow {
+  fill: var(--accent, #3b82f6);
+}
+
+.icon-bolt {
+  fill: var(--warn, #d99a00);
+}
+
+/* --- Details, hours and days ------------------------------------------------------------------- */
+
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9em, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.detail {
+  padding: 0.5em 0.8em;
+  border-radius: 10px;
+  background: var(--chip, #eef0f5);
+}
+
+.detail-name {
+  color: var(--muted, #5d6475);
+  font-size: 0.8em;
+}
+
+.detail-value {
+  margin: 0;
+  font-size: 1.2em;
+  font-weight: 600;
+}
+
+/*
+ * The hours fill one row: the grid makes as many columns as fit, and puts the other hours on rows
+ * of no height, which the overflow hides. So the strip never scrolls sideways.
+ */
+.hours {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(3.4em, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: clamp(12px, 3vmin, 18px);
+}
+
+.hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.3em 0;
+  border-radius: 10px;
+}
+
+.hour .icon {
+  width: 1.8em;
+  height: 1.8em;
+}
+
+.hour-time,
+.day-name {
+  color: var(--muted, #5d6475);
+  font-size: 0.85em;
+}
+
+.hour-temperature {
+  font-weight: 600;
+}
+
+.rain {
+  min-height: 1.2em;
+  color: var(--accent-ink, #1d4ed8);
+  font-size: 0.75em;
+}
+
+.days {
+  display: grid;
+  grid-auto-rows: minmax(2em, 1fr);
   min-height: 0;
   margin: 0;
   padding: 0;
-  overflow-y: auto;
+  overflow: hidden;
   list-style: none;
+  font-size: clamp(13px, 3vmin, 20px);
 }
 
-.habit {
-  display: flex;
+.day {
+  display: grid;
+  grid-template-columns: 3.5em 1.8em 2.6em 2.4em 1fr 2.4em;
+  align-items: center;
+  gap: 0.5em;
+  border-top: 1px solid var(--line, #d9dce5);
 }
 
-.habit-check {
-  flex: 1;
-  padding: 0 1em;
-  border: 1px solid var(--line, #d9dce5);
-  border-radius: 12px;
-  background: var(--chip, #eef0f5);
+.day .icon {
+  width: 1.6em;
+  height: 1.6em;
+}
+
+.day-name {
   color: inherit;
-  font: inherit;
-  font-size: clamp(14px, 4vmin, 28px);
-  text-align: left;
-  cursor: pointer;
+  font-weight: 600;
 }
 
-.habit-check[aria-pressed="true"] {
-  border-color: var(--accent, #3b82f6);
-  background: var(--accent, #3b82f6);
-  color: var(--on-accent, #ffffff);
+.day-low {
+  color: var(--muted, #5d6475);
+  text-align: right;
 }
 
-/* Small: the count fills the card, with no list. */
-.widget[data-size="small"] .habit-list {
+.day-high {
+  font-weight: 600;
+}
+
+.range {
+  width: 100%;
+  height: 0.7em;
+}
+
+.range-track {
+  fill: var(--chip, #eef0f5);
+}
+
+.range-fill {
+  fill: var(--accent, #3b82f6);
+}
+
+/* --- The footer and the messages --------------------------------------------------------------- */
+
+.message {
+  display: none;
+  flex: 1;
+  align-content: center;
+  gap: 0.4em;
+  min-height: 0;
+  margin: 0;
+  color: var(--muted, #5d6475);
+  font-size: clamp(11px, 4vmin, 22px);
+}
+
+.message p {
+  margin: 0;
+}
+
+.widget-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  color: var(--muted, #5d6475);
+  font-size: clamp(10px, 2.6vmin, 14px);
+}
+
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.8em;
+}
+
+.place.is-stale .place-age {
+  color: var(--warn, #9a6b00);
+}
+
+.credit {
+  color: inherit;
+}
+
+/* --- States: only the weather of a loaded forecast shows ------------------------------------- */
+
+.widget:not([data-state="ready"]) :is(.now, .details, .hours, .days) {
   display: none;
 }
 
-.widget[data-size="small"] .widget-header {
+.widget[data-state="no-location"] .no-location,
+.widget[data-state="error"] [data-role="message"] {
+  display: grid;
+}
+
+.widget:is([data-state="no-location"], [data-state="error"]) .place {
+  display: none;
+}
+
+.widget[data-state="loading"] .widget-footer {
+  margin-top: auto;
+}
+
+/* --- Sizes ------------------------------------------------------------------------------------- */
+
+/* Small: the weather now fills the card. */
+.widget[data-size="small"] :is(.details, .hours, .days, .now-range, .message-more, [data-role="place-where"]) {
+  display: none;
+}
+
+/* The small card shows only the age of an old location, so the person knows the weather may be elsewhere. */
+.widget[data-size="small"] .place:not(.is-stale) {
+  display: none;
+}
+
+.widget[data-size="small"] .now {
   flex: 1;
   flex-direction: column;
-  align-items: flex-start;
   justify-content: center;
 }
 
-.widget[data-size="small"] .widget-summary {
-  color: var(--ink, #1f2430);
-  font-size: clamp(16px, 9vmin, 48px);
+.widget[data-size="small"] .now-text {
+  align-items: center;
+  text-align: center;
 }
 
-/* Large and full: the list takes two columns when the space is wide. */
-@media (min-aspect-ratio: 3/2) {
-  .widget[data-size="large"] .habit-list,
-  .widget[data-size="full"] .habit-list {
-    grid-template-columns: repeat(2, 1fr);
+.widget[data-size="small"] .now-temperature {
+  font-size: clamp(28px, 30vmin, 120px);
+}
+
+.widget[data-size="small"] .now-icon .icon {
+  width: clamp(32px, 26vmin, 120px);
+  height: clamp(32px, 26vmin, 120px);
+}
+
+/* Medium: the weather now, and the next hours. */
+.widget[data-size="medium"] :is(.details, .days) {
+  display: none;
+}
+
+.widget[data-size="medium"] .now {
+  flex: 1;
+}
+
+/* Large: also the next days. */
+.widget[data-size="large"] .details {
+  display: none;
+}
+
+.widget:is([data-size="large"], [data-size="full"]) .days {
+  flex: 1;
+}
+
+/* Full screen on a wide screen: the weather now and its details side by side. */
+@media (min-width: 760px) {
+  .widget[data-size="full"] .now {
+    flex-wrap: nowrap;
   }
 }
