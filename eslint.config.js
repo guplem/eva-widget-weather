@@ -5,7 +5,7 @@ export default [
   { ignores: ["node_modules/", "test-results/", "playwright-report/", ".pskill/", ".agents/", ".claude/"] },
   js.configs.recommended,
   {
-    files: ["main.js"],
+    files: ["main.js", "weather.js"],
     languageOptions: { globals: globals.browser },
   },
   {
