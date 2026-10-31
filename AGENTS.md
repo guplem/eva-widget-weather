@@ -6,8 +6,11 @@ This repository is a widget for Eva's home page: a small web page that Eva shows
 
 - **This repository is public, and holds no data of a person.** It holds only mock data for the tests and the demo. Never write a name of a private person, a real data value, a token or a home path.
 - **Plain, standard web code.** HTML, JavaScript and CSS, with no framework and no build step. A browser loads the files as they are.
-- **The widget talks to its host only through `fetch` to relative paths** of the contract: `config.json`, `data/<input>/`, `eva/location.json` and `eva/theme.css`.
+- **The widget talks to its host only through `fetch` to relative paths** of the contract: `config.json`, `eva/location.json` and `eva/theme.css`. Its one other address is the host of its manifest, `https://api.open-meteo.com`.
 - **The widget works outside Eva,** on GitHub Pages and with `npm start`, with the mock files at the same paths.
+- **The credit "Weather data by Open-Meteo" shows at every size, with its link.** Open-Meteo gives its data under CC BY 4.0, which asks for it.
+- **The location leaves the device with two decimals only,** about one kilometre.
+- **Eva ships this widget as a base widget.** A new permission makes each person approve the update. Add an input, a write or a host only with the owner.
 
 ## Rules
 
@@ -16,8 +19,10 @@ This repository is a widget for Eva's home page: a small web page that Eva shows
 - When the widget changes a data file, keep the fields that it does not know.
 - Each input that the widget writes has a JSON Schema in `schemas/`. Its field names follow the naming rules of the contract.
 - A pull request that adds or widens a permission of `eva-widget.json` says so in its body: a new input, a write access, the location, or a host.
-- Keep the mock files in line with the code: `config.json`, `data/`, `eva/theme.css` and `example/location.json`.
+- Keep the mock files in line with the code: `config.json`, `eva/theme.css` and `example/location.json`.
 - Keep `tests/fills-screen.spec.js`: the widget fills the space that it gets, at every size.
+- Never call the real Open-Meteo in a test. Use `fakeForecast` of `tests/helpers.js`, which answers with `tests/forecast.json`.
+- Keep the reading of the forecast in `weather.js`, with no page code, so `tests/weather.test.js` runs it in Node.
 
 ## Checks
 

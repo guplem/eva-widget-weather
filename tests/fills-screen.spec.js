@@ -1,6 +1,12 @@
 // The widget fills the space that it gets, at every size, with no empty border (the widget
 // contract). Eva's setup report checks that this test exists. Keep it.
 import { expect, test } from "@playwright/test";
+import { fakeForecast } from "./helpers.js";
+
+// The tests never call the real Open-Meteo.
+test.beforeEach(async ({ page }) => {
+  await fakeForecast(page);
+});
 
 const viewports = [
   { width: 160, height: 160 },
