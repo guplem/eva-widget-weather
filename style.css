@@ -250,8 +250,15 @@ p {
   display: none;
   flex: 1;
   align-content: center;
+  gap: 0.4em;
+  min-height: 0;
+  margin: 0;
   color: var(--muted, #5d6475);
-  font-size: clamp(13px, 4vmin, 22px);
+  font-size: clamp(11px, 4vmin, 22px);
+}
+
+.message p {
+  margin: 0;
 }
 
 .widget-footer {
@@ -263,7 +270,13 @@ p {
   font-size: clamp(10px, 2.6vmin, 14px);
 }
 
-.place.is-stale {
+.place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.8em;
+}
+
+.place.is-stale .place-age {
   color: var(--warn, #9a6b00);
 }
 
@@ -277,8 +290,13 @@ p {
   display: none;
 }
 
-.widget:is([data-state="no-location"], [data-state="error"]) .message {
+.widget[data-state="no-location"] .no-location,
+.widget[data-state="error"] [data-role="message"] {
   display: grid;
+}
+
+.widget:is([data-state="no-location"], [data-state="error"]) .place {
+  display: none;
 }
 
 .widget[data-state="loading"] .widget-footer {
@@ -288,7 +306,12 @@ p {
 /* --- Sizes ------------------------------------------------------------------------------------- */
 
 /* Small: the weather now fills the card. */
-.widget[data-size="small"] :is(.details, .hours, .days, .now-range, .place) {
+.widget[data-size="small"] :is(.details, .hours, .days, .now-range, .message-more, [data-role="place-where"]) {
+  display: none;
+}
+
+/* The small card shows only the age of an old location, so the person knows the weather may be elsewhere. */
+.widget[data-size="small"] .place:not(.is-stale) {
   display: none;
 }
 

@@ -63,6 +63,15 @@ test("an abbreviation fails, with its name", async () => {
   ]);
 });
 
+test("a name that is not camelCase fails, with its name", async () => {
+  const folder = await copyWith((schema) => {
+    schema.properties.my_field = { type: "string" };
+  });
+  const problems = await checkWidget(folder);
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /"my_field"/);
+});
+
 test("a closed object fails", async () => {
   const folder = await copyWith((schema) => {
     schema.additionalProperties = false;

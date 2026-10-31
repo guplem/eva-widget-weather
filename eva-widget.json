@@ -10,7 +10,7 @@
       "label": "Location",
       "description": "Your last location, from your phone.",
       "why": "The widget shows the forecast for the place where you are. It sends that place to Open-Meteo, rounded to about one kilometre.",
-      "required": true
+      "required": false
     },
     {
       "id": "unit",

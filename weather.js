@@ -101,16 +101,20 @@ export function now(forecast) {
 export function nextHours(forecast, count = 24) {
   const hourly = forecast?.hourly;
   const times = list(hourly, "time");
+  const temperatures = list(hourly, "temperature_2m");
+  const codes = list(hourly, "weather_code");
+  const rain = list(hourly, "precipitation_probability");
+  const isDay = list(hourly, "is_day");
   const from = now(forecast)?.time ?? "";
   const hours = [];
   for (let index = 0; index < times.length && hours.length < count; index += 1) {
     if (times[index] <= from) continue;
     hours.push({
       time: times[index],
-      temperature: list(hourly, "temperature_2m")[index],
-      code: list(hourly, "weather_code")[index],
-      rain: list(hourly, "precipitation_probability")[index],
-      isDay: list(hourly, "is_day")[index] !== 0,
+      temperature: temperatures[index],
+      code: codes[index],
+      rain: rain[index],
+      isDay: isDay[index] !== 0,
     });
   }
   return hours;
@@ -119,14 +123,22 @@ export function nextHours(forecast, count = 24) {
 /** Each day of the forecast, today first: `{ date, code, high, low, rain, sunrise, sunset }`. */
 export function days(forecast) {
   const daily = forecast?.daily;
+  const [codes, highs, lows, rain, sunrises, sunsets] = [
+    "weather_code",
+    "temperature_2m_max",
+    "temperature_2m_min",
+    "precipitation_probability_max",
+    "sunrise",
+    "sunset",
+  ].map((key) => list(daily, key));
   return list(daily, "time").map((date, index) => ({
     date,
-    code: list(daily, "weather_code")[index],
-    high: list(daily, "temperature_2m_max")[index],
-    low: list(daily, "temperature_2m_min")[index],
-    rain: list(daily, "precipitation_probability_max")[index],
-    sunrise: list(daily, "sunrise")[index],
-    sunset: list(daily, "sunset")[index],
+    code: codes[index],
+    high: highs[index],
+    low: lows[index],
+    rain: rain[index],
+    sunrise: sunrises[index],
+    sunset: sunsets[index],
   }));
 }
 

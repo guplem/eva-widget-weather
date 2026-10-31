@@ -24,9 +24,16 @@
       <dl class="details" data-role="details"></dl>
       <ol class="hours" data-role="hours" aria-label="The next hours"></ol>
       <ol class="days" data-role="days" aria-label="The next days"></ol>
+      <div class="message no-location" data-role="no-location">
+        <p>Eva has no location yet. On your phone, open Settings &gt; Access &gt; Your location in Eva.</p>
+        <p class="message-more">Or share your live location with Eva's bot in Telegram.</p>
+      </div>
       <p class="message" data-role="message"></p>
       <footer class="widget-footer">
-        <p class="place" data-role="place"></p>
+        <p class="place" data-role="place">
+          <span data-role="place-where"></span>
+          <span class="place-age" data-role="place-age"></span>
+        </p>
         <a class="credit" href="https://open-meteo.com/" target="_blank" rel="noopener">Weather data by Open-Meteo</a>
       </footer>
     </main>

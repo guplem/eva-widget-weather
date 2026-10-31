@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { fakeForecast } from "./helpers.js";
 
@@ -63,9 +64,55 @@ test("when the forecast does not load, the widget says so, and keeps the credit"
   await expect(page.locator(".widget")).toHaveAttribute("data-ready", "true");
   expect(requests.length).toBe(1);
   await expect(page.locator('[data-role="message"]')).toHaveText(
-    "The forecast did not load. The widget tries again soon.",
+    "The forecast did not load. The widget tries again in a few minutes.",
   );
   await expect(page.locator(".credit")).toBeVisible();
+});
+
+test("a refresh that fails keeps the forecast on the card, and tries again in a few minutes", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-03-10T12:00:00Z") });
+  let status = 200;
+  const forecast = await readFile(new URL("forecast.json", import.meta.url), "utf8");
+  let calls = 0;
+  await page.route("https://api.open-meteo.com/**", (route) => {
+    calls += 1;
+    return status === 200
+      ? route.fulfill({
+          status,
+          contentType: "application/json",
+          headers: { "access-control-allow-origin": "*" },
+          body: forecast,
+        })
+      : route.fulfill({ status, headers: { "access-control-allow-origin": "*" } });
+  });
+  await page.goto("/?size=medium");
+  await expect(page.locator(".widget")).toHaveAttribute("data-state", "ready");
+  status = 503;
+  await page.clock.runFor(30 * 60_000);
+  await expect.poll(() => calls).toBe(2);
+  await expect(page.locator(".widget")).toHaveAttribute("data-state", "ready");
+  await expect(page.locator('[data-role="now-temperature"]')).toHaveText("14°");
+  status = 200;
+  await page.clock.runFor(5 * 60_000);
+  await expect.poll(() => calls).toBe(3);
+});
+
+test("the next days name today by the date of the weather now", async ({ page }) => {
+  const forecast = JSON.parse(await readFile(new URL("forecast.json", import.meta.url), "utf8"));
+  forecast.daily.temperature_2m_max[0] = null;
+  await page.route("https://api.open-meteo.com/**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: { "access-control-allow-origin": "*" },
+      body: JSON.stringify(forecast),
+    }),
+  );
+  await page.goto("/?size=large");
+  await expect(page.locator(".widget")).toHaveAttribute("data-state", "ready");
+  await expect(page.locator(".day")).toHaveCount(6);
+  await expect(page.locator(".day-name").first()).toHaveText("Wed");
+  await expect(page.locator('[data-role="now-range"]')).toHaveText("Feels like 13°");
 });
 
 test("the widget follows the dark mode", async ({ page }) => {

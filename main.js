@@ -7,34 +7,46 @@
 import { clock, days, degrees, forecastUrl, nextHours, now, pointOf, sky, staleAge } from "./weather.js";
 
 const sizes = ["small", "medium", "large", "full"];
-const locationTimeoutMs = 5000;
+const locationTimeoutMs = 8000;
+const requestTimeoutMs = 15_000;
 const refreshMs = 30 * 60_000;
+const retryMs = 5 * 60_000;
 const staleMs = 15 * 60_000;
 const svgSpace = "http://www.w3.org/2000/svg";
-const noLocation =
-  "Eva has no location yet. To share one, open Settings > Access > Your location in Eva on your phone, or share your live location with Eva's bot in Telegram.";
-const noForecast = "The forecast did not load. The widget tries again soon.";
+const noForecast = "The forecast did not load. The widget tries again in a few minutes.";
+const noLocationHere = "Eva could not give the location. The widget tries again in a few minutes.";
 
 const root = document.querySelector(".widget");
 const part = (role) => root.querySelector(`[data-role="${role}"]`);
+const weekdayFormat = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" });
 
 let unit = "celsius";
 let loadedAt = 0;
+/** The number of the newest load: an older load that ends later draws nothing. */
+let loadNumber = 0;
+let retryTimer = 0;
 
-/** The JSON at a path, or undefined when the path does not answer. */
-async function readJson(path) {
+/**
+ * The answer at an address: `{ status, body }`, with the JSON body when the answer is ok. Status 0
+ * when no answer came, such as when the network is down or the request took too long.
+ */
+async function request(address) {
   try {
-    const response = await fetch(path, { cache: "no-store" });
-    return response.ok ? await response.json() : undefined;
+    const response = await fetch(address, { cache: "no-store", signal: AbortSignal.timeout(requestTimeoutMs) });
+    return { status: response.status, body: response.ok ? await response.json() : undefined };
   } catch {
-    return undefined;
+    return { status: 0, body: undefined };
   }
 }
 
-/** The browser's location, or null when the visitor does not allow it. */
+/**
+ * The browser's location, or null when the visitor does not allow it. The widget also stops
+ * waiting by itself, because the browser's timeout does not run while it asks the visitor.
+ */
 function browserLocation() {
   if (!("geolocation" in navigator)) return Promise.resolve(null);
   return new Promise((resolve) => {
+    setTimeout(() => resolve(null), locationTimeoutMs);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => resolve({ latitude: coords.latitude, longitude: coords.longitude }),
       () => resolve(null),
@@ -43,18 +55,18 @@ function browserLocation() {
   });
 }
 
-/** Eva's location first, then the browser's, then the mock one, as the contract says. */
+/**
+ * Eva's location first, then the browser's, then the mock one, as the contract says. Only a
+ * missing path, as on GitHub Pages, moves on to the browser. Inside Eva, the path always answers,
+ * so a failed answer there is an error, never a reason to show the mock location.
+ */
 async function findLocation() {
-  try {
-    const response = await fetch("eva/location.json", { cache: "no-store" });
-    // Inside Eva, this path always answers: with the point, or with null when Eva has none.
-    if (response.ok) return { source: "eva", point: pointOf(await response.json()) };
-  } catch {
-    // No host answers: try the browser.
-  }
+  const eva = await request("eva/location.json");
+  if (eva.status === 200) return { source: "eva", point: pointOf(eva.body) };
+  if (eva.status !== 404) return { source: "eva", point: null, failed: true };
   const point = await browserLocation();
   if (point !== null) return { source: "browser", point };
-  return { source: "example", point: pointOf(await readJson("example/location.json")) };
+  return { source: "example", point: pointOf((await request("example/location.json")).body) };
 }
 
 // --- Drawing ------------------------------------------------------------------------------------
@@ -124,25 +136,24 @@ function show(state) {
   root.dataset.state = state;
 }
 
-function dayName(date, index) {
-  if (index === 0) return "Today";
-  return new Intl.DateTimeFormat(undefined, { weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00Z`));
+/** "Today" for the date of the weather now, else the short weekday. */
+function dayName(date, today) {
+  return date === today ? "Today" : weekdayFormat.format(new Date(`${date}T00:00Z`));
 }
 
 function rainText(chance) {
   return typeof chance === "number" && chance > 0 ? `${String(chance)}%` : "";
 }
 
-function drawNow(forecast) {
-  const current = now(forecast);
-  const today = days(forecast)[0];
+function drawNow(current, today) {
   const { text, icon: kind } = sky(current.code);
   part("now-icon").replaceChildren(icon(kind, current.isDay));
   part("now-temperature").textContent = degrees(current.temperature);
   part("now-sky").textContent = text;
-  const range = today === undefined ? "" : `High ${degrees(today.high)} · Low ${degrees(today.low)}`;
-  part("now-range").textContent =
-    typeof current.feelsLike === "number" ? `Feels like ${degrees(current.feelsLike)} · ${range}` : range;
+  const range = [];
+  if (typeof current.feelsLike === "number") range.push(`Feels like ${degrees(current.feelsLike)}`);
+  if (today !== undefined) range.push(`High ${degrees(today.high)}`, `Low ${degrees(today.low)}`);
+  part("now-range").textContent = range.join(" · ");
 
   const speed = unit === "fahrenheit" ? "mph" : "km/h";
   const details = [
@@ -163,29 +174,30 @@ function drawNow(forecast) {
 function drawHours(forecast) {
   part("hours").replaceChildren(
     ...nextHours(forecast, 24).map((hour) => {
+      const { text, icon: kind } = sky(hour.code);
       const item = element("li", "hour");
+      item.title = text;
       item.append(
         element("span", "hour-time", clock(hour.time)),
-        icon(sky(hour.code).icon, hour.isDay),
+        icon(kind, hour.isDay),
         element("span", "hour-temperature", degrees(hour.temperature)),
         element("span", "rain", rainText(hour.rain)),
       );
-      item.title = sky(hour.code).text;
       return item;
     }),
   );
 }
 
 /** Each day with a bar from its low to its high, on the scale of the whole week. */
-function drawDays(forecast) {
-  const week = days(forecast).filter((day) => typeof day.high === "number" && typeof day.low === "number");
+function drawDays(week, today) {
   const coldest = Math.min(...week.map((day) => day.low));
   const warmest = Math.max(...week.map((day) => day.high));
   const span = Math.max(1, warmest - coldest);
   part("days").replaceChildren(
-    ...week.map((day, index) => {
+    ...week.map((day) => {
+      const { text, icon: kind } = sky(day.code);
       const item = element("li", "day");
-      item.title = sky(day.code).text;
+      item.title = text;
       const bar = svg("svg", {
         class: "range",
         viewBox: "0 0 100 10",
@@ -199,8 +211,8 @@ function drawDays(forecast) {
         svg("rect", { class: "range-fill", x: from, y: 3, width: Math.max(2, to - from), height: 4, rx: 2 }),
       );
       item.append(
-        element("span", "day-name", dayName(day.date, index)),
-        icon(sky(day.code).icon),
+        element("span", "day-name", dayName(day.date, today)),
+        icon(kind),
         element("span", "rain", rainText(day.rain)),
         element("span", "day-low", degrees(day.low)),
         bar,
@@ -214,39 +226,58 @@ function drawDays(forecast) {
 function drawPlace(source, point) {
   const where = `${point.latitude.toFixed(2)}, ${point.longitude.toFixed(2)}`;
   const age = source === "eva" ? staleAge(point.at) : null;
-  const parts = [source === "example" ? `Example location: ${where}` : `Near ${where}`];
-  if (age !== null) parts.push(`Location from ${age}`);
-  part("place").textContent = parts.join(" · ");
+  part("place-where").textContent = source === "example" ? `Example location: ${where}` : `Near ${where}`;
+  part("place-age").textContent = age === null ? "" : `Location from ${age}`;
   part("place").classList.toggle("is-stale", age !== null);
+}
+
+function showMessage(state, text) {
+  part("message").textContent = text;
+  show(state);
 }
 
 // --- Start ----------------------------------------------------------------------------------------
 
+/**
+ * A failure keeps the forecast that the card shows, and tries again in a few minutes. Only a card
+ * with no forecast yet shows the error.
+ */
+function failed(text) {
+  if (root.dataset.state !== "ready") showMessage("error", text);
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(() => void load(), retryMs);
+}
+
 async function load() {
+  const number = (loadNumber += 1);
   loadedAt = Date.now();
-  const { source, point } = await findLocation();
-  if (point === null) {
-    part("message").textContent = noLocation;
-    part("place").textContent = "";
+  const location = await findLocation();
+  if (number !== loadNumber) return;
+  if (location.failed === true) {
+    failed(noLocationHere);
+    return;
+  }
+  if (location.point === null) {
+    part("place").classList.remove("is-stale");
     show("no-location");
     return;
   }
-  drawPlace(source, point);
-  let forecast;
-  try {
-    const response = await fetch(forecastUrl(point, unit));
-    forecast = response.ok ? await response.json() : undefined;
-  } catch {
-    forecast = undefined;
-  }
-  if (now(forecast) === null) {
-    part("message").textContent = noForecast;
-    show("error");
+  const answer = await request(forecastUrl(location.point, unit));
+  if (number !== loadNumber) return;
+  const current = now(answer.body);
+  if (current === null) {
+    failed(noForecast);
     return;
   }
-  drawNow(forecast);
-  drawHours(forecast);
-  drawDays(forecast);
+  const week = days(answer.body).filter((day) => typeof day.high === "number" && typeof day.low === "number");
+  const today = current.time.slice(0, 10);
+  drawPlace(location.source, location.point);
+  drawNow(
+    current,
+    week.find((day) => day.date === today),
+  );
+  drawHours(answer.body);
+  drawDays(week, today);
   show("ready");
 }
 
@@ -254,7 +285,7 @@ async function start() {
   const size = new URLSearchParams(window.location.search).get("size");
   // Opened alone in a browser, the widget shows its full-screen view.
   root.dataset.size = sizes.includes(size) ? size : "full";
-  const config = (await readJson("config.json")) ?? {};
+  const config = (await request("config.json")).body ?? {};
   if (config.unit === "fahrenheit") unit = "fahrenheit";
   await load();
   setInterval(() => void load(), refreshMs);
