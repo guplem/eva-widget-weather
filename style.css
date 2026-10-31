@@ -304,7 +304,12 @@ p {
 }
 
 .widget[data-size="small"] .now-temperature {
-  font-size: clamp(28px, 22vmin, 96px);
+  font-size: clamp(28px, 30vmin, 120px);
+}
+
+.widget[data-size="small"] .now-icon .icon {
+  width: clamp(32px, 26vmin, 120px);
+  height: clamp(32px, 26vmin, 120px);
 }
 
 /* Medium: the weather now, and the next hours. */
