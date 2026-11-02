@@ -8,7 +8,7 @@ This repository is a widget for Eva's home page: a small web page that Eva shows
 - **Plain, standard web code.** HTML, JavaScript and CSS, with no framework and no build step. A browser loads the files as they are.
 - **The widget talks to its host only through `fetch` to relative paths** of the contract: `config.json`, `eva/location.json` and `eva/theme.css`. Its one other address is the host of its manifest, `https://api.open-meteo.com`.
 - **The widget works outside Eva,** on GitHub Pages and with `npm start`, with the mock files at the same paths.
-- **The credit "Weather data by Open-Meteo" shows at every size, with its link.** Open-Meteo gives its data under CC BY 4.0, which asks for it.
+- **The credit "Weather data by Open-Meteo" shows in full screen, with its link, and in the README.** Open-Meteo gives its data under CC BY 4.0, which asks for it. The small, medium and large cards hide it, so they stay clean.
 - **The location leaves the device with two decimals only,** about one kilometre.
 - **Eva ships this widget as a base widget.** A new permission makes each person approve the update. Add an input, a write or a host only with the owner.
 

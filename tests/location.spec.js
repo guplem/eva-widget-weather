@@ -64,7 +64,7 @@ test.describe("inside Eva", () => {
     await expect(message).toContainText("Settings > Access > Your location");
     await expect(message).toContainText("Telegram");
     await expect(page.locator(".now")).toBeHidden();
-    await expect(page.locator(".credit")).toBeVisible();
+    await expect(page.locator(".credit")).toBeHidden();
     expect(requests).toEqual([]);
   });
 

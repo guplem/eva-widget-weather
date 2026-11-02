@@ -9,14 +9,26 @@ async function open(page, size) {
   return requests;
 }
 
-test("the card shows the weather now, with the credit of Open-Meteo", async ({ page }) => {
+test("the card shows the weather now, with no credit", async ({ page }) => {
   await open(page, "small");
   await expect(page.locator('[data-role="now-temperature"]')).toHaveText("14°");
   await expect(page.locator('[data-role="now-sky"]')).toHaveText("Partly cloudy");
+  await expect(page.locator(".credit")).toBeHidden();
+  await expect(page.locator(".hours")).toBeHidden();
+});
+
+for (const size of ["medium", "large"]) {
+  test(`the ${size} card shows no credit`, async ({ page }) => {
+    await open(page, size);
+    await expect(page.locator(".credit")).toBeHidden();
+  });
+}
+
+test("full screen shows the credit of Open-Meteo, with its link", async ({ page }) => {
+  await open(page, "full");
   const credit = page.getByRole("link", { name: "Weather data by Open-Meteo" });
   await expect(credit).toBeVisible();
   await expect(credit).toHaveAttribute("href", "https://open-meteo.com/");
-  await expect(page.locator(".hours")).toBeHidden();
 });
 
 test("the medium size also shows the next hours, from the hour after now", async ({ page }) => {
@@ -58,9 +70,9 @@ test("the unit of config.json asks Open-Meteo for Fahrenheit", async ({ page }) 
   await expect(page.locator(".detail-value").first()).toHaveText("12 mph");
 });
 
-test("when the forecast does not load, the widget says so, and keeps the credit", async ({ page }) => {
+test("when the forecast does not load, the widget says so, and full screen keeps the credit", async ({ page }) => {
   const requests = await fakeForecast(page, 503);
-  await page.goto("/?size=medium");
+  await page.goto("/?size=full");
   await expect(page.locator(".widget")).toHaveAttribute("data-ready", "true");
   expect(requests.length).toBe(1);
   await expect(page.locator('[data-role="message"]')).toHaveText(
