@@ -305,6 +305,19 @@ p {
 
 /* --- Sizes ------------------------------------------------------------------------------------- */
 
+/* The credit of Open-Meteo shows in full screen only, so the cards stay clean. The README also
+   gives it. */
+.widget:not([data-size="full"]) .credit {
+  display: none;
+}
+
+/* With no credit, a card hides its footer when the place does not show either, so the content
+   fills the card. */
+.widget[data-size="small"] .widget-footer:not(:has(.place.is-stale)),
+.widget:not([data-size="full"]):is([data-state="no-location"], [data-state="error"]) .widget-footer {
+  display: none;
+}
+
 /* Small: the weather now fills the card. */
 .widget[data-size="small"] :is(.details, .hours, .days, .now-range, .message-more, [data-role="place-where"]) {
   display: none;
